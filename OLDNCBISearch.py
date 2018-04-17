@@ -2,8 +2,6 @@ from Bio import Entrez
 import pandas as pd
 from pandas import DataFrame
 import itertools
-from itertools import chain
-from itertools import groupby
 import codecs
 import io
 import sys
@@ -11,6 +9,7 @@ import encodings
 import time
 import os
 import math
+from itertools import chain
 from IPython.display import HTML
 from datetime import date
 import datetime
@@ -18,10 +17,12 @@ import pickle
 import types
 import lxml.html
 from operator import itemgetter
+from itertools import groupby
 import json
 import random
 import string
 import helper
+# import new_helper
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -30,6 +31,7 @@ class ncbi_search:
         self.input_term = input_term
         self.input_db = input_db
         self.email_id = email_id
+        # self.tracker = helper.track_outputs
 
     #Find # of records within search parameters
     def pub_count(self):
@@ -43,10 +45,7 @@ class ncbi_search:
         return record_count
 
     #function for retrieving and storing ids
-    def pub_search(self, sort = 'relevance', chunksize = 500, sleeptime = 5):
-        Entrez.email = self.email_id
-        record_count = 10
-        # record_count = int(self.pub_count())
+    def pub_search(self, record_count, sort = 'relevance', chunksize = 500, sleeptime = 5):
         submitinterv = math.ceil(int(record_count)/chunksize)
         id_list = []
         retstartc = 0
