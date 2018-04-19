@@ -171,7 +171,8 @@ def parse_pmc(article):
         'meshterms': kwd_dict_list,
         'abstract':abs_dict_list,
         'optionalId01' :optionalId01,
-        'optionalId02': optionalId02
+        'optionalId02': optionalId02,
+        'pullsource': 'pmc'
     }
 
     return d

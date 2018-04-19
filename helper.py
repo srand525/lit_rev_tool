@@ -93,4 +93,9 @@ def clean_folder():
   # return to_delete
 
 
-
+def filter_ids(input_db,id_list_all,cur):
+    searched_tuples = [(i, input_db) for i in id_list_all]
+    cur.execute('select distinct associatedid,pullsource from public.datapull_uniqueid')
+    existing_tuples = cur.fetchall()
+    to_pull = [i[0] for i in searched_tuples if i not in existing_tuples]
+    return to_pull

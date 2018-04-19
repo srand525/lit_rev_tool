@@ -40,12 +40,13 @@ class ncbi_search:
             if row['DbName'] == self.input_db:
                 record_count = row['Count']
         counthandle.close()
+        record_count = int(record_count)
         return record_count
 
     #function for retrieving and storing ids
-    def pub_search(self, sort = 'relevance', chunksize = 500, sleeptime = 5):
+    def pub_search(self, record_count, sort = 'relevance', chunksize = 500, sleeptime = 5):
         Entrez.email = self.email_id
-        record_count = 10
+        # record_count = 10
         # record_count = int(self.pub_count())
         submitinterv = math.ceil(int(record_count)/chunksize)
         id_list = []
@@ -68,11 +69,11 @@ class ncbi_search:
             handle.close()
         return id_list
 
-    def search_properties(self):
+    def search_properties(self,record_count):
         unique_id = helper.create_unique_id()
         now = datetime.datetime.now()
         time_stamp = now.strftime("%Y-%m-%d %H:%M")
-        n_records_searched = self.pub_count()
+        n_records_searched = record_count
         prop_dict = {'id':unique_id,'id_type':'search'
         ,'input_term':self.input_term,'input_db':self.input_db,'record_count':n_records_searched
         ,'run_date':time_stamp}
