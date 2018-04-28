@@ -1,0 +1,1 @@
+/Users/sophierand/Desktop/super-rentals/tmp/creator-output_path-meR731ju.tmp/version.js

@@ -1,0 +1,1 @@
+/Users/sophierand/Desktop/super-rentals/tmp/funnel-input_base_path-2t4KUI45.tmp/app-config.js

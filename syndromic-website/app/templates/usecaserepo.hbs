@@ -1,0 +1,35 @@
+<div class="jumbo">
+  <div class="right tomster"></div>
+  <h2>Use Case Repository</h2>
+  <p>Please add your own syndromic use case vignette to our Repository.
+    <br><br>
+    For examples of use cases, check out the paper below.
+  </p>
+
+  <a href="http://journals.sagepub.com/doi/abs/10.1177/0033354917711183">Advancing the Use of Emergency Department Syndromic Surveillance Data, New York City, 2012-2016.
+
+Lall, R. et. al. NYC DOHMH
+  </a>
+
+</div>
+
+{{#each model as |usecase|}}
+  <article class="listing">
+    <h3>{{usecase.syndrome}}</h3>
+    <div class="detail description">
+      <span>Background:</span> {{usecase.description}}
+    </div>
+    <div class="detail owner">
+      <span>Owner:</span> {{usecase.owner}}
+    </div>
+    <div class="detail type">
+      <span>Data Source:</span> {{usecase.datasource}}
+    </div>
+    <div class="detail location">
+      <span>Location:</span> {{usecase.city}}
+    </div>
+    <div class="detail bedrooms">
+      <span>Analytical Methods:</span> {{usecase.analyticalmethods}}
+    </div>
+  </article>
+{{/each}}

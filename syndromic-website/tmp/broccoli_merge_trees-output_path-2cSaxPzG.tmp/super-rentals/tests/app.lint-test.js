@@ -1,0 +1,1 @@
+/Users/sophierand/Desktop/super-rentals/tmp/broccoli_merge_trees-input_base_path-rZevRj9Q.tmp/2/super-rentals/tests/app.lint-test.js
