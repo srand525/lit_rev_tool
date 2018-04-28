@@ -57,12 +57,11 @@ def update_id_json(prop_dict):
         with open('unique_identifiers.json', 'w') as f:
             json.dump(data, f)
 
-#find most recent run
-# def id_run(run_type:str):
-def id_run(run_type):
+
+def id_run(run_type,input_db):
     json_path = "unique_identifiers.json"
     json_file = json.load(open(json_path,"r"))
-    type_dict_list = [d for d in json_file if d['id_type'] == run_type]
+    type_dict_list = [d for d in json_file if d['id_type'] == run_type and d['input_db'] == input_db]
     most_recent = max(type_dict_list,key = lambda x:x['run_date'])
     unique_id = most_recent['id']
     serialized_data_path = unique_id + '.pkl'

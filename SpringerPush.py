@@ -33,13 +33,14 @@ def push_detail(cur,con,parse_df,current_id,current_id_tup):
     unique_id_list = cur.fetchall()
 
     #get pullsource for this pull
-    cur.execute("""SELECT pullsource from public.datapull_id  as a where a.pullid = %s""",current_id_tup)
-    pull_source = cur.fetchall()[0][0]
+    # cur.execute("""SELECT pullsource from public.datapull_id  as a where a.pullid = %s""",current_id_tup)
+    # pull_source = cur.fetchall()[0][0]
 
     detail_ins = """INSERT INTO public.datapull_detail(
     pullid, pullsource, associatedid, valuestore, note, optionalid01, optionalid02)
     VALUES (%s, %s, %s, %s, %s, %s, %s);"""
 
+    pull_source = 'springer'
     note = None
     values_list = []
     new_data_df = parse_df
@@ -73,13 +74,6 @@ def push_unique_id(cur,con,new_data_df):
         values_list.append((associated_id,pull_source))
     cur.executemany(unique_id_ins,values_list)
     con.commit()
-    # cur_val_list = []
-    # for tup in values_list:
-    #     cur.execute(unique_id_inst,tup)
-    #     cur_val = cur.fetchall()
-    #     cur_val_list.append(cur_val)
-    #     con.commit()
-    # return cur_val_list
 
 def merge_ids(cur,con,new_data_df):
     cur.execute("SELECT * FROM public.datapull_uniqueid")
@@ -93,7 +87,6 @@ def push_title(cur,con,full_data_df):
     title_ins = """INSERT INTO public.datapull_title(
     uniqueid,title, journalname, journaliso, pubtype, publicationdate, pubday, pubmonth, pubyear)
     VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s);"""
-    # select currval('datapull_title_unique_id_seq');
 
     values_list = []
     for index, row in full_data_df.iterrows():
@@ -103,16 +96,17 @@ def push_title(cur,con,full_data_df):
         journal_iso = row['journalISO']
         pub_type = row['pubtype']
         publication_date = row['publishdatefull']
+        date_format = datetime.datetime.strptime(publication_date, '%Y-%m-%d')
         try:
-            pub_day = row['publishdate']['day']
+            pub_day = date_format.day
         except:
             pub_day = None
         try:
-            pub_month = row['publishdate']['month']
+            pub_month = date_format.month
         except:
             pub_month = None
         try:
-            pub_year = row['publishdate']['year']
+            pub_year = date_format.year
         except:
             pub_year = None
 
@@ -120,7 +114,6 @@ def push_title(cur,con,full_data_df):
 
     cur.executemany(title_ins,values_list)
     con.commit()
-
 
 def push_author(cur,con,full_data_df):
     auth_ins = """INSERT INTO public.datapull_author(
@@ -149,11 +142,13 @@ def push_keyword(cur,con,full_data_df):
 	uniqueid, keywordvalue, category1, category2, category3, category4, category5)
 	VALUES (%s, %s, %s, %s, %s, %s, %s);"""
     values_list = []
-
     for index,row in full_data_df.iterrows():
         unique_id = row['uniqueid']
-        if row['meshterms'] is not None:
+        if row['meshterms'] == []:
+            num_of_qualifiers = 0
+        if row['meshterms'] != []:
             for word in row['meshterms']:
+                print(word)
                 keywordvalue = word['descriptorname']
                 try:
                     num_of_qualifiers = len(word['qualifiername'])
@@ -166,40 +161,30 @@ def push_keyword(cur,con,full_data_df):
                 else:
                     num_of_Nones = 5 - num_of_qualifiers
 
-                #if there are qualifier names, the list should not be 0
-
-                if num_of_qualifiers != 0:
-                    values_list.append(([unique_id,keywordvalue] + word['qualifiername'] + [None]*num_of_Nones))
-                else:
-                    values_list.append((unique_id, keywordvalue, None, None, None, None, None))
+    #             #if there are qualifier names, the list should not be 0
+        if num_of_qualifiers != 0:
+            values_list.append(([unique_id,keywordvalue] + word['qualifiername'] + [None]*num_of_Nones))
+        else:
+            values_list.append((unique_id, None, None, None, None, None, None))
 
     if values_list!=[]:
         cur.executemany(key_ins, values_list)
         con.commit()
 
-
 def push_text(cur,con,full_data_df):
     text_ins = """INSERT INTO public.datapull_text(
 	uniqueid, nlmcategory, label, abstracttext)
 	VALUES (%s, %s, %s, %s);"""
-
     values_list = []
-
     for index,row in full_data_df.iterrows():
         unique_id = row['uniqueid']
         if row['abstract'] is not None:
-            for part in row['abstract']:
-                abstracttext = part['text']
-                try:
-                    label = part['label']
-                except:
-                    label = None
-                try:
-                    nlmcategory = part['nlmcategory']
-                except:
-                    nlmcategory = None
-                values_list.append((unique_id,nlmcategory,label,abstracttext))
-
+            nlmcategory = None
+            label = None
+            abstracttext = row['abstract']
+        if row['abstract'] is None:
+            abstracttext = None
+        values_list.append((unique_id,nlmcategory,label,abstracttext))
     if values_list!=[]:
         cur.executemany(text_ins, values_list)
         con.commit()

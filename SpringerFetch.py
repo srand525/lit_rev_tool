@@ -13,10 +13,27 @@ class springer_fetch:
         self.term = term
         self.api_key = api_key
 
+    def format_input(self):
+        if "AND" not in self.term.upper():
+            term_format = self.term.replace(" ","+")
 
-    def ping_api(self, record_count = 100):
-        term_format = self.term.replace(" ","+")
-        url = 'http://api.springer.com/metadata/json?q=(type:Journal AND "{}")&p={}&api_key={}'.format(term_format,record_count,self.api_key)
+        if "AND" in self.term.upper():
+            word_list = self.term.upper().split('AND')
+            word_list_strip = [a.lstrip().rstrip() for a in word_list]
+            word_list_plus = [b.replace(' ','+') for b in word_list_strip]
+            first_word = "keyword:'" + word_list_plus[0] + "'"
+            final_string = ''
+            for word in word_list_plus[1:]:
+                # final_string+=first_word.lower() +' AND '+ "keyword:'" +  word.lower() + "'"
+                final_string+=first_word.lower() +' OR '+ "keyword:'" +  word.lower() + "'"
+            return final_string
+
+    def ping_api(self, record_count = 200):
+        term_format = self.format_input()
+        # term_format = self.term.replace(" ","+")
+        # url = 'http://api.springer.com/metadata/json?q=(type:Journal AND "{}")&p={}&api_key={}'.format(term_format,record_count,self.api_key)
+        # url = 'http://api.springer.com/metadata/json?q={}&p={}&api_key={}'.format(term_format,record_count,self.api_key)
+        url = 'http://api.springer.com/metadata/json?q=(type:Journal AND keyword:{})&p={}&api_key={}'.format(term_format,record_count,self.api_key)
         return url
 
     def pull_results(self,url):
