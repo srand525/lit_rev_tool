@@ -1,1 +1,0 @@
-export default Ember.HTMLBars.template({"id":"Zt1RdJEj","block":"{\"symbols\":[],\"statements\":[[1,[20,\"outlet\"],false]],\"hasEval\":false}","meta":{"moduleName":"super-rentals/templates/index.hbs"}});

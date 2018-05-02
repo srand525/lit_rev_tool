@@ -8,7 +8,7 @@ import pandas as pd
 import helper
 pd.options.mode.chained_assignment = None
 
-def push_id(cur,con,input_term,parse_df):
+def push_id(cur,con,input_term,parse_df,pull_requestor):
     id_ins = """INSERT INTO public.datapull_id
     (pulldate, pullname, pullquery, pulltype, pullsource, pullby)
     VALUES (%s, %s,%s,%s,%s,%s);
@@ -18,7 +18,8 @@ def push_id(cur,con,input_term,parse_df):
     pull_query = input_term
     pull_type = 'keyword' #keyword/ author
     pull_source = parse_df.pullsource.unique().item()
-    pull_by = 'Sophie'
+    # pull_by = 'Sophie'
+    pull_by = pull_requestor
     id_args = (pull_date,pull_name,pull_query,pull_type,pull_source,pull_by)
     cur.execute(id_ins,id_args)
     cur_id_tup = cur.fetchall()

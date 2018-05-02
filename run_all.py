@@ -13,6 +13,8 @@ importlib.reload(SpringerFetch)
 importlib.reload(SpringerParse)
 importlib.reload(SpringerPush)
 importlib.reload(NCBISearch)
+importlib.reload(NCBIFetch)
+importlib.reload(PUBMEDParse)
 
 
 def main_search(input_term,input_db,email_id,cur):
@@ -67,11 +69,11 @@ def main_fetch(input_db,input_term, email_id,api_key):
         helper.update_id_json(prop_dict)
 
 
-def main_push(input_term,input_db,cur,con):
+def main_push(input_term,input_db,cur,con,pull_requestor):
     if input_db in ('pmc','pubmed'):
         parse_df = helper.id_run('parse',input_db)
         if len(parse_df.index) > 0:
-            cur_id,cur_id_tup = NCBIPush.push_id(cur,con,input_term,parse_df)
+            cur_id,cur_id_tup = NCBIPush.push_id(cur,con,input_term,parse_df,pull_requestor)
             new_data = NCBIPush.push_detail(cur,con,parse_df,cur_id,cur_id_tup)
             NCBIPush.push_unique_id(cur,con,new_data)
             full_df = NCBIPush.merge_ids(cur,con,new_data)
@@ -82,7 +84,7 @@ def main_push(input_term,input_db,cur,con):
     if input_db == 'springer':
         parse_df = helper.id_run('parse','springer')
         if len(parse_df.index) > 0:
-            cur_id,cur_id_tup = SpringerPush.push_id(cur,con,input_term,parse_df)
+            cur_id,cur_id_tup = SpringerPush.push_id(cur,con,input_term,parse_df,pull_requestor)
             new_data = SpringerPush.push_detail(cur,con,parse_df,cur_id,cur_id_tup)
             SpringerPush.push_unique_id(cur,con,new_data)
             full_df = SpringerPush.merge_ids(cur,con,new_data)
@@ -91,7 +93,7 @@ def main_push(input_term,input_db,cur,con):
             SpringerPush.push_keyword(cur,con,full_df)
             SpringerPush.push_text(cur,con,full_df)
 
-def main(input_term,input_db,email_id,api_key,cur,con):
+def main(input_term,input_db,email_id,api_key,cur,con,pull_requestor):
     main_search(input_term,input_db,email_id,cur)
     main_fetch(input_db,input_term, email_id,api_key)
     if input_db == 'pmc':
@@ -100,7 +102,7 @@ def main(input_term,input_db,email_id,api_key,cur,con):
         PUBMEDParse.main()
     if input_db == 'springer':
         SpringerParse.main()
-    main_push(input_term,input_db,cur,con)
+    main_push(input_term,input_db,cur,con,pull_requestor)
 
 if __name__ == '__main__':
-    main(input_term,input_db,email_id)
+    main(input_term,input_db,email_id,pull_requestor)

@@ -1,1 +1,0 @@
-export { default } from 'super-rentals/config/environment';

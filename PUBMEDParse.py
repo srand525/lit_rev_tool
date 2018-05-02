@@ -241,7 +241,7 @@ def parse_properties(parsed_df):
   return prop_dict
 
 def main():
-  full_doc = helper.id_run('fetch')
+  full_doc = helper.id_run('fetch','pubmed')
   article_list = helper.xml_to_html(full_doc,'pubmed')
   parsed_df = parse_all(article_list)
   prop_dict = parse_properties(parsed_df)

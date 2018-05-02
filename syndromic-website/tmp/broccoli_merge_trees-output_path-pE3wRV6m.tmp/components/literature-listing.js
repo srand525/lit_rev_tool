@@ -1,1 +1,0 @@
-/Users/sophierand/Desktop/super-rentals/app/components/literature-listing.js

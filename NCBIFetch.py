@@ -60,7 +60,7 @@ class ncbi_fetch:
         unique_id = helper.create_unique_id()
         now = datetime.datetime.now()
         time_stamp = now.strftime("%Y-%m-%d %H:%M")
-        id_list = helper.id_run('search')
+        id_list = helper.id_run('search',self.input_db)
         run_fetch = self.pub_fetch(id_list)
         article_list = helper.xml_to_html(run_fetch,self.input_db)
         n_records_fetched = len(article_list)
