@@ -11,34 +11,41 @@ def connect_to_db():
     cursor = conn.cursor()
     return conn, cursor
 
-# # this function returns an object for one user
+
 def title(query_term):
     con,cur = connect_to_db()
-    title_query = """SELECT distinct e.pullid,e.pullquery, e.pullby, c.title, c.pubyear from public.datapull_detail as a inner join public.datapull_uniqueid as b on a.pullsource = b.pullsource AND a.associatedid = b.associatedid inner join public.datapull_title as c on b.uniqueid = c.uniqueid inner join public.datapull_text as d on b.uniqueid = d.uniqueid inner join public.datapull_id as e on e.pullid = a.pullid where e.pullquery = '{}' limit 25""".format(query_term)
+    # title_query = """SELECT distinct e.pullid,e.pullquery, e.pullby, c.title, c.pubyear from public.datapull_detail as a inner join public.datapull_uniqueid as b on a.pullsource = b.pullsource AND a.associatedid = b.associatedid inner join public.datapull_title as c on b.uniqueid = c.uniqueid inner join public.datapull_text as d on b.uniqueid = d.uniqueid inner join public.datapull_id as e on e.pullid = a.pullid where e.pullquery = '{}' """.format(query_term)
+    # title_query = """SELECT distinct e.pullid,e.pullquery, e.pullby, c.title, c.pubyear from public.datapull_detail as a inner join public.datapull_uniqueid as b on a.pullsource = b.pullsource AND a.associatedid = b.associatedid inner join public.datapull_title as c on b.uniqueid = c.uniqueid inner join public.datapull_text as d on b.uniqueid = d.uniqueid inner join public.datapull_id as e on e.pullid = a.pullid where e.pullquery = '{}' """.format(query_term)
+    title_query = """SELECT distinct e.pullsource,c.title, c.journalname, c.publicationdate, c.pubtype from public.datapull_detail as a inner join public.datapull_uniqueid as b on a.pullsource = b.pullsource AND a.associatedid = b.associatedid inner join public.datapull_title as c on b.uniqueid = c.uniqueid inner join public.datapull_id as e on e.pullid = a.pullid where e.pullquery = '{}' """.format(query_term)
     cur.execute(title_query)
     title_returns = cur.fetchall()
     title_dict_list = []
     for t in enumerate(title_returns):
         title_dict = {}
-        title_dict = {
-        "type": "titles",
-        "id": t[0]+1,
-        "attributes": {"title": t[1][3]}}
-        title_dict_list.append(title_dict)
-    # dict_result = [{'type':'lit', 'attributes':{'pullid':b[0],'query_term':b[1],'pull_by':b[2],'title':b[3],'pub_year':b[4]}} for b in title_returns]
+        pubtype_a = t[1][4].replace("}","").replace("{","")
+        pubtype = pubtype_a.replace("''","").replace('"',"").replace(",",", ")
+        title = t[1][1]
+        pubdatetime = t[1][3]
+        pubdate = pubdatetime.strftime("%Y-%m-%d")
+        if title != '':
+            title_dict = {
+            "type": "titles",
+            "id": t[0],
+            "attributes": {"pubsource":t[1][0],"title":t[1][1],"journalname": t[1][2],"pubdate":pubdate,"pubtype":pubtype}}
+            title_dict_list.append(title_dict)
     return title_dict_list
 
-# route for all entities
 @app.route('/api/titles')
 def titles():
     print('somethings happening')
     con,cur = connect_to_db()
-    term_query = """SELECT distinct pullquery from public.datapull_id"""
+    term_query = """SELECT distinct pullquery, pullsource from public.datapull_id"""
     cur.execute(term_query)
     term_list_fetch = cur.fetchall()
     term_list = [b[0] for b in term_list_fetch]
     title_result_all = [title(i) for i in term_list]
-    title_result = [d for d in title_result_all if d!=[]][0]
+    flatten = lambda l: [item for sublist in l for item in sublist]
+    title_result = flatten(title_result_all)
     return jsonify({
         "data": title_result
         })
@@ -52,7 +59,7 @@ def titles_by_term(query_term):
 # this function returns an object for one user
 def q(query_id):
     con,cur = connect_to_db()
-    query = """SELECT distinct pullid,pullquery from public.datapull_id where pullid = {} limit 25""".format(query_id)
+    query = """SELECT distinct pullid,pullquery,pulldate,pullsource,pullby from public.datapull_id where pullid = {} """.format(query_id)
     query_name_run = cur.execute(query)
     query_name = cur.fetchall()[0]
     return {
@@ -60,16 +67,34 @@ def q(query_id):
         "id": query_name[0],                      # And some unique identifier
         "attributes": {                     # Here goes actual payload.
             # "info": "data" + str(user_id),  # the only data we have for each user is "info" field
-            "term": query_name[1],  # the only data we have for each user is "info" field
+            "term": query_name[1],
+            "pullid": query_name[0],
+            "pulldate": query_name[2],
+            "pullsource":query_name[3],
+            "pullby":query_name[4] # the only data we have for each user is "info" field
         },
     }
 
 # route for all entities
 @app.route('/api/queries')
 def queries():
+    con,cur = connect_to_db()
+    query = """SELECT max(pullid) as max_pullid from public.datapull_id"""
+    query_name_run = cur.execute(query)
+    max_pullid = cur.fetchall()[0][0]+1
+    q_list = []
+    for i in list(range(1,max_pullid)):
+        try:
+            q_hist = q(i)
+            q_list.append(q_hist)
+        except:
+            pass
     return jsonify({
-        "data": [q(i) for i in list(range(1,6))]
+        "data": q_list
         })
+    # return jsonify({
+    #     "data": [q(i) for i in list(range(1,6))]
+    #     })
 
 # routes for individual entities
 @app.route('/api/queries/<query_id>')
