@@ -1,5 +1,20 @@
 
 #creating database tables with postgres queries
+create table usecase_submit (
+	submitterid serial PRIMARY KEY,
+	firstname text,
+	lastname text,
+	affiliation text,
+	owner text,
+	syndromedef text,
+	domain text,
+	purpose text,
+	routine boolean,
+	analysismethod text,
+	datasource text,
+	results text,
+	outcome text
+);
 
 create table datapull_id (
 	PullID serial PRIMARY KEY,

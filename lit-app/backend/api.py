@@ -3,6 +3,14 @@ from flask import jsonify
 from flask import request, send_from_directory
 from flask import abort, request, make_response, url_for
 import psycopg2
+import json
+import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask import abort
+from flask import make_response
+import uuid
+import logging
 
 app = Flask(__name__, static_url_path='')
 
@@ -12,32 +20,152 @@ def connect_to_db():
     cursor = conn.cursor()
     return conn, cursor
 
-def title(query_term):
-    con,cur = connect_to_db()
-    title_query = """SELECT distinct e.pullsource,c.title, c.journalname, c.publicationdate, c.pubtype
-    from public.datapull_detail as a inner join public.datapull_uniqueid as b on a.pullsource = b.pullsource AND
-    a.associatedid = b.associatedid inner join public.datapull_title as c on b.uniqueid = c.uniqueid
-    inner join public.datapull_id as e on e.pullid = a.pullid where e.pullquery = '{}' """.format(query_term)
-    cur.execute(title_query)
-    title_returns = cur.fetchall()
-    title_dict_list = []
-    for t in enumerate(title_returns):
-        title_dict = {}
-        pubtype_a = t[1][4].replace("}","").replace("{","")
-        pubtype = pubtype_a.replace("''","").replace('"',"").replace(",",", ")
-        title = t[1][1]
-        pubdatetime = t[1][3]
-        pubdate = pubdatetime.strftime("%Y-%m-%d")
-        if title != '':
-            title_dict = {
-            "type": "titles",
-            "id": t[0],
-            "attributes": {"pubsource":t[1][0],"title":t[1][1],"journalname": t[1][2],"pubdate":pubdate,"pubtype":pubtype}}
-            title_dict_list.append(title_dict)
-    return title_dict_list
-
-
 # this function returns an object for one user
+def u(user_id):
+    con,cur = connect_to_db()
+    query = """select distinct submitterid,firstname,lastname from public.usecase_submit where submitterid = {};""".format(user_id)
+    cur.execute(query)
+    args = cur.fetchall()[0]
+    return {
+        "type": "users",                    # It has to have type
+        "id": args[0],                      # And some unique identifier
+        "attributes": {
+            "firstname":args[1],
+            "lastname":args[2],
+        },
+    }
+
+# routes for individual entities
+@app.route('/api/users/<user_id>')
+def users_by_id(user_id):
+    return jsonify({"data": u(user_id)})
+
+
+# route for all entities
+@app.route('/api/users')
+def users():
+    con,cur = connect_to_db()
+    query = """select distinct submitterid from public.usecase_submit;"""
+    cur.execute(query)
+    id_list = [a[0] for a in cur.fetchall()]
+    return jsonify({
+        "data": [u(i) for i in id_list]
+        })
+
+@app.route('/api/users', methods=['POST', 'OPTIONS'])
+def create_user():
+	# if request.get_json(silent=True) == None:
+	# 	return jsonify(success=True)
+    print('were here!')
+    attrs = request.json
+    args = (attrs['data']['attributes']['firstname'],attrs['data']['attributes']['lastname'])
+    con,cur = connect_to_db()
+    # insert_query = """INSERT INTO public.test_table
+    # (firstname,lastname)
+    # VALUES (%s, %s);"""
+    insert_query = """INSERT INTO public.usecase_submit
+    (firstname,lastname)
+    VALUES (%s, %s);"""
+
+    # insert_query = """INSERT INTO public.usecase_submit
+    # (firstname,lastname)
+    # VALUES (%s, %s);"""
+    cur.execute(insert_query,args)
+    con.commit()
+    # print(attrs)
+    print('we got this far')
+    print(args)
+
+#SUBMIT UC HERE######
+# this function returns an object for one user
+def uc(uc_id):
+    con,cur = connect_to_db()
+    query = """select distinct submitterid,firstname,lastname from public.usecase_submit where submitterid = {};""".format(uc_id)
+    cur.execute(query)
+    args = cur.fetchall()[0]
+    return {
+        "type": "usecases",                    # It has to have type
+        "id": args[0],                      # And some unique identifier
+        "attributes": {
+            "info": args[2],
+            # "info": 'data'+str(uc_id),
+
+        },
+    }
+
+# routes for individual entities
+@app.route('/api/usecases/<uc_id>')
+def usecases_by_id(uc_id):
+    return jsonify({"data": uc(uc_id)})
+
+
+# route for all entities
+@app.route('/api/usecases')
+def usecases():
+    print('in the use case fn')
+    con,cur = connect_to_db()
+    query = """select distinct submitterid from public.usecase_submit;"""
+    cur.execute(query)
+    id_list = [a[0] for a in cur.fetchall()]
+    print('made it to the end')
+    return jsonify({
+        "data": [uc(i) for i in id_list]
+        })
+#
+# @app.route('/api/usecases', methods=['POST', 'OPTIONS'])
+# def create_usecase():
+# 	# if request.get_json(silent=True) == None:
+# 	# 	return jsonify(success=True)
+#     print('were here!')
+#     attrs = request.json
+#     args = (attrs['data']['attributes']['firstname'],attrs['data']['attributes']['lastname'])
+#     con,cur = connect_to_db()
+#     # insert_query = """INSERT INTO public.test_table
+#     # (firstname,lastname)
+#     # VALUES (%s, %s);"""
+#     insert_query = """INSERT INTO public.usecase_submit
+#     (firstname,lastname)
+#     VALUES (%s, %s);"""
+#
+#     # insert_query = """INSERT INTO public.usecase_submit
+#     # (firstname,lastname)
+#     # VALUES (%s, %s);"""
+#     cur.execute(insert_query,args)
+#     con.commit()
+#     # print(attrs)
+#     print('we got this far')
+#     print(args)
+#end use case
+
+
+
+
+
+# def title(query_term):
+#     con,cur = connect_to_db()
+#     title_query = """SELECT distinct e.pullsource,c.title, c.journalname, c.publicationdate, c.pubtype
+#     from public.datapull_detail as a inner join public.datapull_uniqueid as b on a.pullsource = b.pullsource AND
+#     a.associatedid = b.associatedid inner join public.datapull_title as c on b.uniqueid = c.uniqueid
+#     inner join public.datapull_id as e on e.pullid = a.pullid where e.pullquery = '{}' """.format(query_term)
+#     cur.execute(title_query)
+#     title_returns = cur.fetchall()
+#     title_dict_list = []
+#     for t in enumerate(title_returns):
+#         title_dict = {}
+#         pubtype_a = t[1][4].replace("}","").replace("{","")
+#         pubtype = pubtype_a.replace("''","").replace('"',"").replace(",",", ")
+#         title = t[1][1]
+#         pubdatetime = t[1][3]
+#         pubdate = pubdatetime.strftime("%Y-%m-%d")
+#         if title != '':
+#             title_dict = {
+#             "type": "titles",
+#             "id": t[0],
+#             "attributes": {"pubsource":t[1][0],"title":t[1][1],"journalname": t[1][2],"pubdate":pubdate,"pubtype":pubtype}}
+#             title_dict_list.append(title_dict)
+#     return title_dict_list
+
+# # this function returns an object for one user
 def query_run(query_id):
     con,cur = connect_to_db()
     query = """SELECT distinct pullid,pullquery,pulldate,pullsource,pullby from public.datapull_id where pullid = {} """.format(query_id)
@@ -56,27 +184,7 @@ def query_run(query_id):
     }
 
 
-@app.route('/api/titles',methods = ['GET'])
-def titles():
-    print('somethings happening')
-    con,cur = connect_to_db()
-    term_query = """SELECT distinct pullquery, pullsource from public.datapull_id"""
-    cur.execute(term_query)
-    term_list_fetch = cur.fetchall()
-    term_list = [b[0] for b in term_list_fetch]
-    title_result_all = [title(i) for i in term_list]
-    flatten = lambda l: [item for sublist in l for item in sublist]
-    title_result = flatten(title_result_all)
-    return jsonify({
-        "data": title_result
-        })
-
-# routes for individual entities
-@app.route('/api/titles/<query_term>',methods = ['GET'])
-def titles_by_term(query_term):
-    return jsonify({"data": title(query_term)})
-
-# route for all entities
+# # route for all entities
 @app.route('/api/queries',methods = ['GET'])
 def queries():
     con,cur = connect_to_db()
@@ -95,57 +203,27 @@ def queries():
 def queries_by_id(query_id):
     return jsonify({"data": query_run(query_id)})
 
-# @app.route('/api/submit',methods=['POST'])
-@app.route('/api/submits',methods = ['POST'])
-def submit():
-    language = request.get('text') #if key doesn't exist, returns None
-    # language = request.form('text') #if key doesn't exist, returns None
-    return jsonify({'data':language})
-    # return '''<h1>The language value is: {}</h1>'''.format(language)
-    # name = request.form.get['text']
-    # print(name)
-    # print('gangs all here')
-    # return name
-
-    # return {
-    #     "type": "queries",                    # It has to have type
-    #     "id": 1,                      # And some unique identifier
-    #     "attributes": {                     # Here goes actual payload.
-    #         "text": _name
-    #     },
-    # }
-    # return jsonify({"data": _name})
-	# _email = request.form['inputEmail']
-	# _password = request.form['inputPassword']
-
-# @app.route("/addCCRelationship",methods=['GET', 'POST'])
-# def addCCRelationship():
-#     print('in add relationship component component')
-#     # read the posted values from the UI
-#     parent_component = request.form.get('parent_component_component')
-#     child_component = request.form.get('child_component')
-#     #push the ingredient and components
-#     push_new_component(parent_component)
-#     push_new_component(child_component)
-#     #now push the relationship
-#     push_cc_relationship(parent_component,child_component)
-#     a_string = parent_component + ' includes: ' + child_component
-#     return a_string
-#
-
 
 @app.route('/')
 def root():
     return send_from_directory('static', "index.html")
-
+#
 # route for other static files
 @app.route('/<path:path>')
 def send_js(path):
     return send_from_directory('', path)
-
-
+#
+#
+# if __name__ == '__main__':
+#     print("use\n"
+#           "FLASK_APP=dummy.py python -m flask run\n"
+#           "instead")
+#     exit(1)
+#
+# #
 if __name__ == '__main__':
-    print("use\n"
-          "FLASK_APP=dummy.py python -m flask run\n"
-          "instead")
-    exit(1)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
